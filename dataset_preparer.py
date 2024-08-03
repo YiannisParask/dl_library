@@ -28,4 +28,15 @@ class DatasetPreparer:
                               num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         return dataset
-    
+
+    def splits(dataset, TRAIN_RATIO=0.7, VAL_RATIO=0.2, TEST_RATIO=0.1):
+        '''Split the dataset into train, validation, and test sets'''
+        DATASET_SIZE = len(dataset)
+
+        train_dataset = dataset.take(int(TRAIN_RATIO*DATASET_SIZE))
+
+        val_test_dataset = dataset.skip(int(TRAIN_RATIO*DATASET_SIZE))
+        val_dataset = val_test_dataset.take(int(VAL_RATIO*DATASET_SIZE))  
+
+        test_dataset = val_test_dataset.skip(int(TEST_RATIO*DATASET_SIZE))
+        return train_dataset, val_dataset, test_dataset
