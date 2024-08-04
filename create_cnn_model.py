@@ -1,9 +1,10 @@
 from tensorflow.keras import layers
-from tensorflow.keras.models import Model
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 
 class ResidualBlock(layers.Layer):
@@ -96,11 +97,9 @@ class CnnModelSubClassing:
         y_true = np.argmax(y_true, axis=1)
         
         # Print classification report
-        from sklearn.metrics import classification_report
         print(classification_report(y_true, y_pred))
         
         # Generate confusion matrix
-        from sklearn.metrics import confusion_matrix
         cm = confusion_matrix(y_true, y_pred)
         cm = pd.DataFrame(cm, index=class_names, columns=class_names)
         plt.figure(figsize=(10, 7))
