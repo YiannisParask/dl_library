@@ -83,35 +83,6 @@ class CnnModelSubClassing:
         x = self.dense1(x)
         x = self.activation(x)
         return self.output_dense(x)
-
-    def compile_model(self, optimizer="adam", loss="categorical_crossentropy", metric=["accuracy"]):
-        """Compiles the model."""
-        self.compile(
-            optimizer=optimizer,
-            loss=loss,
-            metrics=metric,
-        )
-        return self.model
-
-    def train_model(self, train_dataset, val_dataset, epochs=10, callbacks=None):
-        """Trains the model."""
-        history = self.fit(
-            train_dataset,
-            validation_data=val_dataset,
-            epochs=epochs,
-            callbacks=callbacks,
-        )
-        return history
-
-    def evaluate_model(self, test_dataset):
-        """Evaluates the model."""
-        loss, accuracy = self.evaluate(test_dataset)
-        print(f"Loss: {loss}, Accuracy: {accuracy}")
-
-    def model_predict(self, test_dataset):
-        '''Function to predict the model'''
-        predictions = self.predict(test_dataset)
-        return predictions
     
     def metrics(self, model, test_ds):
         '''Function to calculate the metrics of the model'''
