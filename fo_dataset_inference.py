@@ -50,7 +50,7 @@ class FoDatasetInference:
         if not self.is_rgb:
             image = tf.image.rgb_to_grayscale(image)
         image = tf.cast(image, tf.float32) / 255.0
-        return image, file_path
+        return image
 
     def fiftyone_to_tf_dataset(self):
         """Converts a FiftyOne dataset view to a TensorFlow Dataset (tf.data.Dataset)."""

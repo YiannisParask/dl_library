@@ -41,7 +41,7 @@ class LoadFiftyoneDataset:
         if not is_rgb:
             image = tf.image.rgb_to_grayscale(image)
         image = tf.cast(image, tf.float32) / 255.0
-        return image, file_path
+        return image
 
     def fiftyone_to_tf_dataset(self, fo_dataset_view, image_size=(224, 224), batch_size=32, is_rgb=False):
         """Converts a FiftyOne dataset view to a TensorFlow Dataset (tf.data.Dataset)."""
