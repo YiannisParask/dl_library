@@ -46,7 +46,7 @@ class LoadFiftyoneDataset:
     def fiftyone_to_tf_dataset(self, fo_dataset_view, image_size=(224, 224), batch_size=32, is_rgb=False):
         """Converts a FiftyOne dataset view to a TensorFlow Dataset (tf.data.Dataset)."""
         file_paths = fo_dataset_view.values("filepath")
-        labels = fo_dataset_view.values("label")
+        labels = fo_dataset_view.values("ground_truth")
         file_paths = [str(fp) for fp in file_paths]
 
         def load_image_and_label(file_path, label):
