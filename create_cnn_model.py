@@ -1,10 +1,5 @@
 from tensorflow.keras import layers
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+from tensorflow import keras
 
 
 class ResidualBlock(layers.Layer):
@@ -40,8 +35,8 @@ class ResidualBlock(layers.Layer):
         x = layers.add([x, residual])
         return x
 
-
-class CnnModelSubClassing:
+# TODO: Parse config dictionary instead of passing arguments
+class CnnModelSubClassing(keras.Model):
     '''
     Usage:
     num_classes = 10
@@ -84,28 +79,5 @@ class CnnModelSubClassing:
         x = self.dense1(x)
         x = self.activation(x)
         return self.output_dense(x)
-    
-    def metrics(self, model, test_ds):
-        '''Function to calculate the metrics of the model'''
-        class_names = self.get_class_names(test_ds)
-        # Make predictions
-        predictions = model.predict(test_ds)
-        y_pred = np.argmax(predictions, axis=1)
-        
-        # Get the true labels
-        y_true = np.concatenate([y for x, y in test_ds], axis=0)
-        y_true = np.argmax(y_true, axis=1)
-        
-        # Print classification report
-        print(classification_report(y_true, y_pred))
-        
-        # Generate confusion matrix
-        cm = confusion_matrix(y_true, y_pred)
-        cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        plt.figure(figsize=(10, 7))
-        sns.heatmap(cm, annot=True, fmt='g', cmap='Blues')
-        plt.xlabel("Predicted")
-        plt.ylabel("True")
-        plt.title("Confusion Matrix")
-        plt.show()
+
     
