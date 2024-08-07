@@ -40,22 +40,23 @@ class CnnModelSubClassing(keras.Model):
     '''
     Usage:
     num_classes = 10
-    input_shape = (224, 224, 3)
+    input_shape = (None, 224, 224, 3)
     filters = [0, 1, 2]
     model = CnnModelSubClassing(num_classes, input_shape, output_function="sigmoid")
-    model.build_model(filters, add_residual=True)
+    model.build_helper(filters, add_residual=True)
+    model.build(input_shape)
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     '''
     def __init__(self, num_classes, input_shape, output_function="softmax"):
-        super(CnnModelSubClassing, self).__init__()
+        super().__init__()
         self.num_classes = num_classes
-        self.input_shape = input_shape
         self.flatten = layers.Flatten()
         self.dense1 = layers.Dense(32)
         self.activation = layers.Activation("relu")
         self.output_dense = layers.Dense(num_classes, activation=output_function)
         self.conv_blocks = []
 
-    def build_model(self, filters, add_residual=False):
+    def build_helper(self, filters, add_residual=False):
         '''Function to build the model'''
         for filter in filters:
             conv_block = [
