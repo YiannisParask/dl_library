@@ -3,6 +3,7 @@ import fiftyone as fo
 import json
 import os
 from tensorflow.keras.utils import to_categorical
+import numpy as np
 
 # TODO: Handle case where labels are already in integer format
 class LoadFiftyoneDataset:
@@ -99,6 +100,20 @@ class LoadFiftyoneDataset:
         )
         tf_dataset = tf_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
         return tf_dataset
+    
+    def get_samples_labels(self, train, test):
+        # extract the images and labels for each dataset
+        train_images = np.concatenate(list(train.map(lambda x, y: x)))
+        train_labels = np.concatenate(list(train.map(lambda x, y: y)))
+        
+        test_images = np.concatenate(list(test.map(lambda x, y: x)))
+        test_labels = np.concatenate(list(test.map(lambda x, y: y)))
+        
+        # join them together
+        inputs = np.concatenate((train_images, test_images), axis = 0)
+        targets = np.concatenate((train_labels, test_labels), axis = 0)
+        
+        return inputs, targets
 
     def splits(dataset, TRAIN_RATIO=0.7, VAL_RATIO=0.2, TEST_RATIO=0.1):
         '''Split the dataset into train, validation, and test sets'''
