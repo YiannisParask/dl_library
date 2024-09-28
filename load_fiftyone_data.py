@@ -11,7 +11,7 @@ class LoadFiftyoneDataset:
     def __init__(self, dataset_dir, labels_dir):
         self.dataset_dir = dataset_dir
         self.labels_dir = labels_dir
-        self.class_to_index = {}
+
 
     def load_fo_dataset(self, dataset_name):
         """Imports annotations into a FiftyOne dataset and returns it.
@@ -20,12 +20,6 @@ class LoadFiftyoneDataset:
             dataset_name: The name of the dataset.
         Returns:
             dataset: The FiftyOne dataset.
-        Notes: Directory structure should be as follows:
-            dataset_dir
-            ├── data
-            │   ├── image_1.png
-            │   ├── image_2.png
-            │   └── ...
         """
         if dataset_name in fo.list_datasets():
             dataset = fo.load_dataset(dataset_name)
@@ -37,15 +31,25 @@ class LoadFiftyoneDataset:
             )
         return dataset
     
-    def load_labels_from_json(self):
+    def _load_labels_from_json(self):
         '''Load labels from a JSON file'''
         with open(self.labels_dir, "r") as file:
             labels_data = json.load(file)
         label_mappings = labels_data["labels"] 
         return label_mappings
     
-    def load_labels_from_fiftyone(self, file_paths, label_mappings):
-        '''Load labels from a FiftyOne dataset'''
+    def _load_labels_from_fiftyone(self, file_paths, label_mappings):
+        '''
+        Load labels from Fiftyone dataset
+        Args:
+            file_paths: List of file paths
+            label_mappings: Dictionary containing label mappings
+        Returns:
+            file_paths: List of file paths
+            labels: List of labels
+        Note:
+            Labels are expected to be numeric!
+        '''
         labels = []
         missing_labels = []
         for fp in file_paths:
@@ -58,22 +62,23 @@ class LoadFiftyoneDataset:
 
         if missing_labels:
             print(f"Missing labels for the following files: {missing_labels}")
-
-        # Convert categorical labels to indices
-        unique_labels = set(labels)
-        self.class_to_index = {label: idx for idx, label in enumerate(unique_labels)}
-
-        # Convert labels to integer indices
-        labels = [self.class_to_index[label] for label in labels]
         
-        # Filter out samples with missing labels
-        valid_indices = [i for i, label in enumerate(labels) if label != -1]
+        # Filter out samples with missing labels (if exist)
+        valid_indices = [i for i, label in enumerate(labels) if label != "unknown"]
         file_paths = [file_paths[i] for i in valid_indices]
         labels = [labels[i] for i in valid_indices]
         return file_paths, labels
 
-    def load_and_preprocess_image(self, file_path, image_size=(224, 224), is_rgb=False):
-        """Loads and preprocesses an image for inference using TensorFlow."""
+    def _load_and_preprocess_image(self, file_path, image_size=(224, 224), is_rgb=False):
+        ''' 
+        Load and preprocess image.
+        Args:
+            file_path: String
+            image_size: Tuple of image dimensions
+            is_rgb: Boolean
+        Returns:
+            image: Preprocessed image
+        '''
         image = tf.io.read_file(file_path)
         image = tf.image.decode_png(image, channels=3)
         image = tf.image.resize(image, image_size)
@@ -83,25 +88,44 @@ class LoadFiftyoneDataset:
         return image
 
     def fiftyone_to_tf_dataset(self, fo_dataset, image_size=(224, 224), batch_size=32, is_rgb=False):
+        '''
+        Convert Fiftyone dataset to TensorFlow dataset        
+        Args:
+            fo_dataset: Fiftyone dataset
+            image_size: Tuple of image dimensions
+            batch_size: Integer
+            is_rgb: Boolean
+        Returns:
+            tf_dataset: TensorFlow dataset
+        '''
         file_paths = fo_dataset.values("filepath")
-        label_mappings = self.load_labels_from_json()
-        file_paths, labels = self.load_labels_from_fiftyone(file_paths, label_mappings) 
-        num_classes = len(self.class_to_index)
-        labels = to_categorical(labels, num_classes=num_classes)
+        label_mappings = self._load_labels_from_json()
+        file_paths, labels = self._load_labels_from_fiftyone(file_paths, label_mappings)
+        
+        labels = to_categorical(labels)
 
-        def load_image_and_label(file_path, label):
-            image = self.load_and_preprocess_image(file_path, image_size, is_rgb)
+        def _load_image_and_label(file_path, label):
+            image = self._load_and_preprocess_image(file_path, image_size, is_rgb)
             return image, label
 
         tf_dataset = tf.data.Dataset.from_tensor_slices((file_paths, labels))
         tf_dataset = tf_dataset.map(
-            lambda file_path, label: load_image_and_label(file_path, label),  
+            lambda file_path, label: _load_image_and_label(file_path, label),  
             num_parallel_calls=tf.data.AUTOTUNE
         )
         tf_dataset = tf_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
         return tf_dataset
     
     def get_samples_labels(self, train, test):
+        '''
+        Get samples and labels from TensorFlow datasets
+        Args:
+            train: TensorFlow dataset
+            test: TensorFlow dataset
+        Returns:
+            inputs: Numpy array of images
+            targets: Numpy array of labels
+        '''
         # extract the images and labels for each dataset
         train_images = np.concatenate(list(train.map(lambda x, y: x)))
         train_labels = np.concatenate(list(train.map(lambda x, y: y)))
@@ -115,8 +139,19 @@ class LoadFiftyoneDataset:
         
         return inputs, targets
 
-    def splits(dataset, TRAIN_RATIO=0.7, VAL_RATIO=0.2, TEST_RATIO=0.1):
-        '''Split the dataset into train, validation, and test sets'''
+    def splits(self, dataset, TRAIN_RATIO=0.7, VAL_RATIO=0.2, TEST_RATIO=0.1):
+        ''' 
+        Split dataset into training, validation, and test sets. 
+        Args:
+            dataset: TensorFlow dataset
+            TRAIN_RATIO: Float
+            VAL_RATIO: Float
+            TEST_RATIO: Float
+        Returns:
+            train_dataset: TensorFlow dataset
+            val_dataset: TensorFlow dataset
+            test_dataset: TensorFlow dataset
+        '''
         DATASET_SIZE = len(dataset)
 
         train_dataset = dataset.take(int(TRAIN_RATIO*DATASET_SIZE))

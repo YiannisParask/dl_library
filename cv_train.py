@@ -1,4 +1,5 @@
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold, StratifiedGroupKFold
+#from sklearn.model_selection import KFold
 import numpy as np
 
 class CrossValidationTraining:
@@ -47,14 +48,19 @@ class CrossValidationTraining:
             # create a print statement for the fold
             print(f"Training for fold {fold_no} ...")
             # fit model 
-            history = self.model.fit(self.inputs[train_ix], self.targets[train_ix], 
+            history = self.model.fit(self.inputs[train_ix], 
+                                     self.targets[train_ix], 
                                      epochs=epochs, 
                                      verbose=1,
                                      callbacks=callbacks,
                                      validation_split=0.2
                                     )
             
-            scores = self.model.evaluate(self.inputs[test_ix], self.targets[test_ix], verbose=0)
+            scores = self.model.evaluate(
+                self.inputs[test_ix], 
+                self.targets[test_ix], 
+                verbose=0
+            )
             
             print(f'Score for fold {fold_no}: {self.model.metrics_names[0]} of {scores[0]}; {self.model.metrics_names[1]} of {scores[1]*100}%')
             acc_per_fold.append(scores[1] * 100)
